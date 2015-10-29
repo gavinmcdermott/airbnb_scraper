@@ -1,0 +1,18 @@
+
+nightly price:
+
+GET https://www.airbnb.com/rooms/366829/personalization.json
+
+
+availability:
+
+GET https://www.airbnb.com/api/v2/calendar_months?key=d306zoyjsyarp7ifhu67rjxn52tv0t20&currency=USD&locale=en&listing_id=366829&month=10&year=2015&count=3&_format=with_conditions
+GET https://www.airbnb.com/api/v2/calendar_months?key=d306zoyjsyarp7ifhu67rjxn52tv0t20&currency=USD&locale=en&listing_id=5722698&month=10&year=2015&count=3&_format=with_conditions
+
+
+
+https://www.airbnb.com/api/v2/calendar_months?key=d306zoyjsyarp7ifhu67rjxn52tv0t20&currency=USD&locale=en&listing_id=7823732&month=10&year=2015&count=3&_format=with_conditions
+7823732
+
+// gets calendar details. Not sure what key is here (is it a user key, a session key) but GETs with different listing ids work with the same key
+// This url works for any listing by changing listing id
