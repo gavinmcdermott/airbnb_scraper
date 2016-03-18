@@ -1,10 +1,143 @@
 'use strict'
 
-module.exports.userKey = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
+var _ = require('lodash');
+var Firebase = require("firebase");  // Used to store scrapes
+var moment = require('moment');
+var querystring = require('querystring');
 
-// month and year to start looking at a listing's availability
-module.exports.month = 10; // october
-module.exports.year = 2015;
+var now = moment();
 
-// number of days to look ahead when figuring availability rate for a listing
-module.exports.daysToLookAhead = 30;
+
+// Constants
+// 
+
+
+// walker delay
+var FETCH_DELAY = 5000;
+
+// Search limits - 21 is the arbitrary max (Todo: see if we can get around this?)
+var SEARCH_LIMIT = 21;
+
+// Note re: cities => we need to use the same syntax/spelling every time...So Use These Constants!!!
+var LOCATIONS = {
+  STATE_NAMES: {
+    CA: 'CA',
+  },
+  CA: {
+    LAKE_TAHOE_NORTH: 'North Lake Tahoe',
+    LAKE_TAHOE_SOUTH: 'South Lake Tahoe'
+  }
+};
+
+
+// Location to search
+var SEARCH_CITY = LOCATIONS.CA.LAKE_TAHOE_SOUTH;  // IMPOTRANT: Be sure to use a city constant!
+var SEARCH_STATE = LOCATIONS.STATE_NAMES.CA;
+var SEARCH_COUNTRY = 'US';
+var SEARCH_LOCATION_STRING = SEARCH_CITY + ' ' + SEARCH_STATE + ' ' + SEARCH_COUNTRY;
+
+// String for URL replacement
+var LISTING_ID_PARAM = 'LISTINGID';
+// Year to check for airbnb availability
+var YEAR_TO_CHECK = now.format('YYYY');
+// Month to check for airbnb availability
+var MONTH_TO_CHECK = now.format('M');  // March
+
+// URL format in firebase: scrapes/<CITY_STATE>/<DAY_MONTH_YR>
+// E.g.: /scrapes/north_lake_tahoe_us/7_3_2016
+var BASE_STORE_ENDPOINT = 'https://burning-inferno-3875.firebaseio.com/scrapes';
+var LOCATION_ENDPOINT = _.snakeCase(SEARCH_CITY + ' ' + SEARCH_STATE);
+var DATE_ENDPOINT = _.snakeCase(moment().format('MM') + ' ' + moment().format('DD') + ' ' + moment().format('YYYY'));
+
+var SAVE_ENDPOINT = BASE_STORE_ENDPOINT + '/' + LOCATION_ENDPOINT + '/' + DATE_ENDPOINT;
+
+
+
+// Exports
+// 
+
+// 
+module.exports.location = {
+  city: SEARCH_CITY,
+  state: SEARCH_STATE,
+  country: SEARCH_STATE,
+  string: SEARCH_LOCATION_STRING
+};
+
+// The root for our firebase scrape data store
+module.exports.store = {
+  instance: new Firebase(SAVE_ENDPOINT),
+  url: BASE_STORE_ENDPOINT,
+  markets: LOCATIONS
+};
+
+// Any user's Airbnb user key - pulled manually from a console request :P
+module.exports.userKey = '3092nxybyb0otqw18e8nh5nty';  // key from http://airbnbapi.org
+
+module.exports.urlHelpers = {
+  // Listings
+  listingsSearch: {
+    base: 'https://api.airbnb.com/v2/search_results?',
+    params: {
+      'client_id': module.exports.userKey,
+      'location': SEARCH_LOCATION_STRING,
+      '_limit': SEARCH_LIMIT,
+      'min_bathrooms': 0,
+      'min_bedrooms': 0,
+      'min_beds': 1,
+      'price_max': 5000,
+      'price_min': 0,
+      'currency': 'USD',
+      'locale': 'en-US',
+      'sort': 1,
+      '_offset': 0,
+    }
+  },
+
+  // Listing
+  listingPrice: {
+    base: 'https://www.airbnb.com/rooms/' + LISTING_ID_PARAM + '/personalization.json'
+  },
+  listingDetails: {
+    base: 'https://api.airbnb.com/v2/listings/' + LISTING_ID_PARAM + '?',
+    params: {
+      client_id: module.exports.userKey,
+      _format: 'v1_legacy_for_p3'
+    }
+  },
+  listingAvailability: {
+    base: 'https://www.airbnb.com/api/v2/calendar_months?',
+    params: {
+      'key': module.exports.userKey,
+      'currency': 'USD',
+      'locale': 'en',
+      'listing_id': LISTING_ID_PARAM,
+      'month': MONTH_TO_CHECK,
+      'year': YEAR_TO_CHECK,
+      'count': 1,
+      '_format': 'with_conditions',
+    }
+  }
+};
+
+// Airbnb JSON endpoints
+module.exports.url = {
+  listings: {
+    search: module.exports.urlHelpers.listingsSearch.base + querystring.stringify(module.exports.urlHelpers.listingsSearch.params)
+  },
+  listing: {
+    pricing: module.exports.urlHelpers.listingPrice.base,
+    details: module.exports.urlHelpers.listingDetails.base + querystring.stringify(module.exports.urlHelpers.listingDetails.params),
+    availability: module.exports.urlHelpers.listingAvailability.base + querystring.stringify(module.exports.urlHelpers.listingAvailability.params)
+  },
+  constants: {
+    LISTING_ID: LISTING_ID_PARAM
+  }
+};
+
+module.exports.requestHelpers = {
+  delay: FETCH_DELAY,
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
+};
+
+// encodeURIComponent('sdf sdf  sdf3 - -')
