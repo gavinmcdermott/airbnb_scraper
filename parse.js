@@ -35,6 +35,44 @@ var JSON_SPECIFIER = '.json';
 // 
 function getHouseDetails(data) {
   
+  var parsedData = [];
+  // This first forEach looks at each date in the dataset,
+  // which then has a bunch of house/listing IDs and their details,
+  // which we iterate over in the second forEach.
+  _(data).forEach(function(houseId) {
+    _(houseId).forEach(function(info, houseId){
+      // an intermediate array to store our dates it's available
+      var availableDates = [];
+      // get our days if they're available
+      _(info.availability[0].days).forEach(function(day){
+        if (day.available == true) {
+          availableDates.push(day.date);
+        }
+      });
+      // what we actually return
+      parsedData.push(
+      {
+            id: houseId,
+            price: info.details.price,
+            availability: availableDates,
+            bathrooms: info.details.bathrooms,
+            bedrooms: info.details.bedrooms, 
+            beds: info.details.bed,
+            price: info.details.price,
+            location: {
+              neighborhood: info.details.neighborhood,
+              lat: info.details.lat,
+              lng: info.details.lng
+            } 
+      })
+    });
+
+    // Obviously these can be removed/changed. 
+    console.log("=> Uncomment line 72 to see what we get from getHouseDetails()! \n");
+    // console.log(parsedData);
+  }); 
+
+  // Gavin's note:
   // what I want!
   // {
   //   id: houseId,
