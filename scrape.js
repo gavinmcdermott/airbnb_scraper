@@ -16,7 +16,7 @@ var config = require('./config');
 
 var url = config.url;
 var URL_LISTING_PARAM = url.constants.LISTING_ID;
-var STORE = config.store.instance;
+var STORE = config.store.scrapes.instance;
 
 
 // Helper functions
@@ -46,8 +46,6 @@ function getStarted() {
 
 // Search for n listings in a give market
 function searchListings() {
-  printStep('Getting Listings');
-
   var options = {
     uri: url.listings.search,
     headers: { 'user-agent': config.requestHelpers.userAgent }
@@ -195,7 +193,7 @@ function saveListings(data) {
   STORE.update(data)
   .then(function() {
     console.log('=> Latest listing data saved!');
-    console.log('=> ' + config.store.url);
+    console.log('=> ' + config.store.scrapes.url);
     console.log('');
     console.log('');
     console.log('');

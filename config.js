@@ -15,8 +15,8 @@ var now = moment();
 // walker delay
 var FETCH_DELAY = 5000;
 
-// Search limits - 21 is the arbitrary max (Todo: see if we can get around this?)
-var SEARCH_LIMIT = 21;
+// Search limits - 50 is max aggressiveness
+var SEARCH_LIMIT = 50;
 
 // Note re: cities => we need to use the same syntax/spelling every time...So Use These Constants!!!
 var LOCATIONS = {
@@ -45,11 +45,14 @@ var MONTH_TO_CHECK = now.format('M');  // March
 
 // URL format in firebase: scrapes/<CITY_STATE>/<DAY_MONTH_YR>
 // E.g.: /scrapes/north_lake_tahoe_us/7_3_2016
-var BASE_STORE_ENDPOINT = 'https://burning-inferno-3875.firebaseio.com/scrapes';
 var LOCATION_ENDPOINT = _.snakeCase(SEARCH_CITY + ' ' + SEARCH_STATE);
 var DATE_ENDPOINT = _.snakeCase(moment().format('MM') + ' ' + moment().format('DD') + ' ' + moment().format('YYYY'));
 
-var SAVE_ENDPOINT = BASE_STORE_ENDPOINT + '/' + LOCATION_ENDPOINT + '/' + DATE_ENDPOINT;
+var SCRAPE_BASE_ENDPOINT = 'https://burning-inferno-3875.firebaseio.com/scrapes';
+var SCRAPE_SAVE_ENDPOINT = SCRAPE_BASE_ENDPOINT + '/' + LOCATION_ENDPOINT + '/' + DATE_ENDPOINT;
+
+var INSIGHT_BASE_ENDPOINT = 'https://burning-inferno-3875.firebaseio.com/insights';
+var INSIGHT_SAVE_ENDPOINT = INSIGHT_BASE_ENDPOINT + '/' + LOCATION_ENDPOINT;
 
 
 
@@ -61,14 +64,20 @@ module.exports.location = {
   city: SEARCH_CITY,
   state: SEARCH_STATE,
   country: SEARCH_STATE,
-  string: SEARCH_LOCATION_STRING
+  string: SEARCH_LOCATION_STRING,
+  markets: LOCATIONS
 };
 
 // The root for our firebase scrape data store
 module.exports.store = {
-  instance: new Firebase(SAVE_ENDPOINT),
-  url: BASE_STORE_ENDPOINT,
-  markets: LOCATIONS
+  scrapes: {
+    instance: new Firebase(SCRAPE_SAVE_ENDPOINT),
+    url: SCRAPE_BASE_ENDPOINT
+  },
+  insights: {
+    instance: new Firebase(INSIGHT_SAVE_ENDPOINT),
+    url: INSIGHT_BASE_ENDPOINT
+  }
 };
 
 // Any user's Airbnb user key - pulled manually from a console request :P
@@ -81,7 +90,10 @@ module.exports.urlHelpers = {
     params: {
       'client_id': module.exports.userKey,
       'location': SEARCH_LOCATION_STRING,
+      // internals
       '_limit': SEARCH_LIMIT,
+      '_offset': 0,
+      // externals
       'min_bathrooms': 0,
       'min_bedrooms': 0,
       'min_beds': 1,
@@ -90,7 +102,6 @@ module.exports.urlHelpers = {
       'currency': 'USD',
       'locale': 'en-US',
       'sort': 1,
-      '_offset': 0,
     }
   },
 
